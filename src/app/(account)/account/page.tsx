@@ -8,7 +8,7 @@ import { PricingCard } from '@/features/pricing/components/price-card';
 import { getProducts } from '@/features/pricing/controllers/get-products';
 import { Price, ProductWithPrices } from '@/features/pricing/types';
 
-// Helper type to tell TypeScript that prices exists
+// Type assertion to fix 'never' error
 type SafeProduct = ProductWithPrices & { prices: Price[] };
 
 export default async function AccountPage() {
@@ -22,42 +22,41 @@ export default async function AccountPage() {
     redirect('/login');
   }
 
-  // Type assertion to fix 'never' issue
+  // Fix: tell TypeScript the real shape
   const products = rawProducts as SafeProduct[];
 
   let userProduct: SafeProduct | undefined;
   let userPrice: Price | undefined;
 
-if (subscription && products?.length) {
-  for (const product of products as any[]) {  // <-- this fixes the 'never' error
-    if (product.prices?.length) {
-      for (const price of product.prices) {
-        if (price.id === subscription.price_id) {
-          userProduct = product;
-          userPrice = price;
-          break;
+  if (subscription && products.length > 0) {
+    outer: for (const product of products) {
+      if (product.prices && product.prices.length > 0) {
+        for (const price of product.prices) {
+          if (price.id === subscription.price_id) {
+            userProduct = product;
+            userPrice = price;
+            break outer;
+          }
         }
       }
     }
-    if (userProduct) break;
   }
-}
 
   return (
-    <section className="rounded-lg bg-black px-4 py-16">
-      <h1 className="mb-8 text-center text-3xl font-bold text-white">Account</h1>
+    <section className='rounded-lg bg-black px-4 py-16'>
+      <h1 className='mb-8 text-center text-3xl font-bold text-white'>Account</h1>
 
-      <div className="flex flex-col gap-6">
+      <div className='flex flex-col gap-6'>
         <Card
           title="Your Plan"
           footer={
             subscription ? (
-              <Button size="sm" variant="secondary" asChild>
-                <Link href="/manage-subscription">Manage subscription</Link>
+              <Button size='sm' variant='secondary' asChild>
+                <Link href='/manage-subscription'>Manage your subscription</Link>
               </Button>
             ) : (
-              <Button size="sm" variant="secondary" asChild>
-                <Link href="/pricing">Start a subscription</Link>
+              <Button size='sm' variant='secondary' asChild>
+                <Link href='/pricing'>Start a subscription</Link>
               </Button>
             )
           }
@@ -84,13 +83,13 @@ function Card({
   footer?: ReactNode;
 }>) {
   return (
-    <div className="m-auto w-full max-w-3xl rounded-md bg-zinc-900 border border-zinc-800 overflow-hidden">
-      <div className="p-6">
-        <h2 className="mb-4 text-2xl font-semibold text-white">{title}</h2>
-        <div className="py-4">{children}</div>
+    <div className='m-auto w-full max-w-3xl rounded-md bg-zinc-900 border border-zinc-800 overflow-hidden'>
+      <div className='p-6'>
+        <h2 className='mb-4 text-2xl font-semibold text-white'>{title}</h2>
+        <div className='py-4'>{children}</div>
       </div>
       {footer && (
-        <div className="flex justify-end border-t border-zinc-800 bg-zinc-950/50 p-4">
+        <div className='flex justify-end border-t border-zinc-800 bg-zinc-950/50 p-4'>
           {footer}
         </div>
       )}
