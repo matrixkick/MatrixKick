@@ -37,17 +37,19 @@ export default async function AccountPage() {
   let userProduct: ProductWithPrices | null = null;
   let userPrice: Price | null = null;
 
-  if (subscription) {
-    for (const product of products) {
-      for (const price of product.prices) {
-        if (price.id === subscription.price_id) {
-          userProduct = product;
-          userPrice = price;
-          break;
-        }
+ if (subscription && products?.length) {
+  // Fix: tell TypeScript products has prices
+  for (const product of products as any[]) {
+    // Safety: skip if no prices
+    for (const price of product.prices || []) {
+      if (price.id === subscription.price_id) {
+        userProduct = product;
+        userPrice = price;
+        break;
       }
-    }
+    if (userProduct) break;
   }
+
 
   return (
     <section className="rounded-lg bg-black px-4 py-16">
