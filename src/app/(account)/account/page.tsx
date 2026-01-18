@@ -1,7 +1,6 @@
 import { PropsWithChildren, ReactNode } from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-
 import { Button } from '@/components/ui/button';
 import { getSession } from '@/features/account/controllers/get-session';
 import { getSubscription } from '@/features/account/controllers/get-subscription';
@@ -9,42 +8,54 @@ import { PricingCard } from '@/features/pricing/components/price-card';
 import { getProducts } from '@/features/pricing/controllers/get-products';
 import { Price, ProductWithPrices } from '@/features/pricing/types';
 
+// Define the expected shape (prevents 'never' type)
+type SafeProduct = ProductWithPrices & { prices: Price[] };
+
 export default async function AccountPage() {
-  const [session, subscription, products] = await Promise.all([getSession(), getSubscription(), getProducts()]);
+  const [session, subscription, products] = await Promise.all([
+    getSession(),
+    getSubscription(),
+    getProducts(),
+  ]);
 
   if (!session) {
     redirect('/login');
   }
 
-  let userProduct: ProductWithPrices | undefined;
+  let userProduct: SafeProduct | undefined;
   let userPrice: Price | undefined;
 
-  if (subscription) {
-    for (const product of products) {
+  if (subscription && products?.length) {
+    // Use optional chaining and type assertion to avoid 'never' error
+    for (const product of products as SafeProduct[]) {
+      if (!product.prices?.length) continue;
+
       for (const price of product.prices) {
         if (price.id === subscription.price_id) {
           userProduct = product;
           userPrice = price;
+          break;
         }
       }
+      if (userProduct) break;
     }
   }
 
   return (
-    <section className='rounded-lg bg-black px-4 py-16'>
-      <h1 className='mb-8 text-center'>Account</h1>
+    <section className="rounded-lg bg-black px-4 py-16">
+      <h1 className="mb-8 text-center text-3xl font-bold text-white">Account</h1>
 
-      <div className='flex flex-col gap-4'>
+      <div className="flex flex-col gap-6">
         <Card
-          title='Your Plan'
+          title="Your Plan"
           footer={
             subscription ? (
-              <Button size='sm' variant='secondary' asChild>
-                <Link href='/manage-subscription'>Manage your subscription</Link>
+              <Button size="sm" variant="secondary" asChild>
+                <Link href="/manage-subscription">Manage subscription</Link>
               </Button>
             ) : (
-              <Button size='sm' variant='secondary' asChild>
-                <Link href='/pricing'>Start a subscription</Link>
+              <Button size="sm" variant="secondary" asChild>
+                <Link href="/pricing">Start a subscription</Link>
               </Button>
             )
           }
@@ -52,7 +63,9 @@ export default async function AccountPage() {
           {userProduct && userPrice ? (
             <PricingCard product={userProduct} price={userPrice} />
           ) : (
-            <p>You don&apos;t have an active subscription</p>
+            <p className="text-gray-400 text-center py-8">
+              You don't have an active subscription yet.
+            </p>
           )}
         </Card>
       </div>
@@ -69,12 +82,16 @@ function Card({
   footer?: ReactNode;
 }>) {
   return (
-    <div className='m-auto w-full max-w-3xl rounded-md bg-zinc-900'>
-      <div className='p-4'>
-        <h2 className='mb-1 text-xl font-semibold'>{title}</h2>
-        <div className='py-4'>{children}</div>
+    <div className="m-auto w-full max-w-3xl rounded-md bg-zinc-900 border border-zinc-800 overflow-hidden">
+      <div className="p-6">
+        <h2 className="mb-4 text-2xl font-semibold text-white">{title}</h2>
+        <div className="py-4">{children}</div>
       </div>
-      <div className='flex justify-end rounded-b-md border-t border-zinc-800 p-4'>{footer}</div>
+      {footer && (
+        <div className="flex justify-end border-t border-zinc-800 bg-zinc-950/50 p-4">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }
