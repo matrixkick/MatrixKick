@@ -28,19 +28,20 @@ export default async function AccountPage() {
   let userProduct: SafeProduct | undefined;
   let userPrice: Price | undefined;
 
-  if (subscription && products.length > 0) {
-    outer: for (const product of products) {
-      if (product.prices && product.prices.length > 0) {
-        for (const price of product.prices) {
-          if (price.id === subscription.price_id) {
-            userProduct = product;
-            userPrice = price;
-            break outer;
-          }
+if (subscription && products?.length) {
+  for (const product of products as any[]) {  // <-- this fixes the 'never' error
+    if (product.prices?.length) {
+      for (const price of product.prices) {
+        if (price.id === subscription.price_id) {
+          userProduct = product;
+          userPrice = price;
+          break;
         }
       }
     }
+    if (userProduct) break;
   }
+}
 
   return (
     <section className="rounded-lg bg-black px-4 py-16">
