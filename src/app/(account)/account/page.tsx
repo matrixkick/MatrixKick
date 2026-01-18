@@ -9,8 +9,16 @@ import { PricingCard } from '@/features/pricing/components/price-card';
 import { getProducts } from '@/features/pricing/controllers/get-products';
 import { Price, ProductWithPrices } from '@/features/pricing/types';
 
+/**
+ * Minimal safe subscription shape
+ * (we only need price_id here)
+ */
+type SafeSubscription = {
+  price_id: string;
+} | null;
+
 export default async function AccountPage() {
-  // ✅ FORCE tuple typing to prevent `never`
+  // 🔒 FORCE TYPES FOR EVERYTHING (kills `never`)
   const [session, subscription, products] =
     (await Promise.all([
       getSession(),
@@ -18,7 +26,7 @@ export default async function AccountPage() {
       getProducts(),
     ])) as [
       Awaited<ReturnType<typeof getSession>>,
-      Awaited<ReturnType<typeof getSubscription>>,
+      SafeSubscription,
       ProductWithPrices[]
     ];
 
@@ -69,7 +77,7 @@ export default async function AccountPage() {
           {userProduct && userPrice ? (
             <PricingCard product={userProduct} price={userPrice} />
           ) : (
-            <p className="text-center py-8 text-gray-400">
+            <p className="py-8 text-center text-gray-400">
               You don&apos;t have an active subscription yet.
             </p>
           )}
